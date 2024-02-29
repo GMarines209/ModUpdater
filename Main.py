@@ -7,6 +7,8 @@ from bs4 import BeautifulSoup
 import requests
 
 
+
+
 #open file  
 def ModFiles():
 
@@ -16,7 +18,7 @@ def ModFiles():
     mods=[]
     username = os.getlogin()
 
-    filenames = filedialog.askopenfilenames(
+    filenames = filedialog.askopenfilenames( #if user doesnt have a mods folder it just opens on default directory (documents)
         initialdir = os.path.join("C:\\Users", username, "AppData", "Roaming", ".minecraft", "mods"), # os.path.join creates the complete folder path by joining the individual directory parts
         title= "select mods to update",
         filetypes= [("jar files","*.jar")] 
@@ -71,14 +73,13 @@ button = ctk.CTkButton(   # First button for mod selection
     )
 button.pack()
 
-combobox = ctk.CTkComboBox( # Combobox for all versions
-    window,
-    values= (versions),
-    )
-combobox.pack(pady = 20)
 
-myCombo = ttk.Combobox(window, values= (versions))
-myCombo.pack()
+
+myCombo = ttk.Combobox( #figure out the issue with the version combobox
+    window,
+    values= (versions)
+      )   
+myCombo.pack(pady = 20)
 
 
 

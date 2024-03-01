@@ -7,7 +7,7 @@ import requests
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 
-
+# Get started on Forge integration ... pending api approval
 
 #open file  
 def ModFiles():
@@ -26,13 +26,12 @@ def ModFiles():
         mod_name = ( os.path.basename(filename))
         mods.append(mod_name)
         
-
+# get download location of new mods
 def DownloadPath():
     filepath = filedialog.askdirectory(
         title= "select download location",
     )
 
-    
 
 # gathering website data
 website = "https://mcversions.net"
@@ -59,30 +58,42 @@ label = tb.Label(
 label.pack(pady = 20)
 
 # First button for mod selection
-button = tb.Button(   
+sel_button = tb.Button(   
     root,
     bootstyle = PRIMARY,
     text ="Browse:",
     command = ModFiles
     )
-button.pack()
+sel_button.pack()
 
 #combobox for Versions
-myCombo = tb.Combobox( 
+vsCombo = tb.Combobox( 
     root,
     bootstyle ="darkly",
     values= (versions)
       )   
-myCombo.pack(pady = 20)
-myCombo.current(0)
+vsCombo.pack(pady = 20)
+vsCombo.current(0)
 
 # second button for download path selection
-button = tb.Button(   
+path_button = tb.Button(   
     root,
     text ="Browse",
     command = DownloadPath
     )
-button.pack()
+path_button.pack()
+
+#Final submit button
+sub_button = tb.Button(
+    root,
+    text ="Find my mods",
+)
+sub_button.pack(pady= 10)
+sub_button.configure(state="disabled") # Disabled on default until user selects all 3 catagories
+
+
+
+
 
 # running
 root.mainloop()

@@ -6,8 +6,12 @@ from bs4 import BeautifulSoup
 import requests
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
+import pyglet
 
 # Get started on Forge integration ... pending api approval
+
+pyglet.font.add_file("Minecrafter.Reg.ttf")
+Minecrafter =  pyglet.font.load("Minecrafter")
 
 #open file  
 def ModFiles():
@@ -25,6 +29,10 @@ def ModFiles():
     for filename in filenames:
         mod_name = ( os.path.basename(filename))
         mods.append(mod_name)
+
+    path  = os.path.dirname(filename)
+    path_text = (path + filename)
+    path_entry.insert(0,path_text)
         
 # get download location of new mods
 def DownloadPath():
@@ -50,14 +58,15 @@ root.geometry("600x400")
 # Widgets 
 
 # Text on top for Mod selection
-label = tb.Label(
+title_label = tb.Label(
     root,
     text = "Select your Mods folder",
-    bootstyle = PRIMARY 
+    bootstyle = "white",
+    font=("Minecrafter")
     )
-label.pack(pady = 20)
+title_label.pack(pady = 20)
 
-# First button for mod selection
+# First browse button for mod selection
 sel_button = tb.Button(   
     root,
     bootstyle = PRIMARY,
@@ -65,6 +74,13 @@ sel_button = tb.Button(
     command = ModFiles
     )
 sel_button.pack()
+
+# label for file path on mod selection
+path_entry = tb.Entry(
+    root,
+    width= 50
+    )
+path_entry.pack()
 
 #combobox for Versions
 vsCombo = tb.Combobox( 

@@ -2,16 +2,43 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 import os
-from bs4 import BeautifulSoup
 import requests
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 import pyglet
+from dotenv import load_dotenv
 
-# Get started on Forge integration ... pending api approval
+load_dotenv(".env")
 
 pyglet.font.add_file("Minecrafter.Reg.ttf")
 Minecrafter =  pyglet.font.load("Minecrafter")
+
+
+Api_key: str = os.getenv("API_KEY")
+
+headers = {
+  'Accept': 'application/json',
+  'x-api-key': Api_key
+}
+r = requests.get('https://api.curseforge.com/v1/minecraft/version', headers = headers)
+
+versions = []
+
+if r.status_code == 200:
+  # Process the response data
+  data = r.json()
+
+  # Loop through each game entry and access data using schema-defined properties
+  for game_entry in data["data"]:
+    game_version = game_entry["versionString"]
+    versions.append(game_version)
+
+else:
+  # Handle unsuccessful response
+  print(f"Error retrieving data: {r.status_code}")
+
+
+
 
 #open file  
 def ModFiles():
@@ -41,19 +68,11 @@ def DownloadPath():
     )
 
 
-# gathering website data
-website = "https://mcversions.net"
-response = requests.get(website)
-
-soup = BeautifulSoup(response.text, "html.parser")
-elements = soup.find_all("div", class_="item flex items-center p-3 border-b border-gray-700 snap-start ncItem")
-versions = [element["data-version"] for element in elements]
-
-
 # creating window
 root = tb.Window(themename='darkly')
 root.title("Minecraft Mod Updater")
-root.geometry("600x400")
+root.geometry("500x400")
+
 
 # Widgets 
 
@@ -64,7 +83,12 @@ title_label = tb.Label(
     bootstyle = "white",
     font=("Minecrafter")
     )
-title_label.pack(pady = 20)
+
+title_height = title_label.winfo_height()
+
+screen_width = root.winfo_screenwidth()
+x_center = int((400 / 2) - (title_height / 2))  # Use height for centering
+title_label.place(x=100, y=10)
 
 # First browse button for mod selection
 sel_button = tb.Button(   
@@ -73,14 +97,14 @@ sel_button = tb.Button(
     text ="Browse:",
     command = ModFiles
     )
-sel_button.pack()
+sel_button.grid(pady= 60,padx= 35,sticky="w",row = 2, column= 2,)
 
 # label for file path on mod selection
 path_entry = tb.Entry(
     root,
     width= 50
     )
-path_entry.pack()
+path_entry.grid(padx= 100,pady= 60,sticky="e",row = 2, column= 2,)
 
 #combobox for Versions
 vsCombo = tb.Combobox( 
@@ -88,7 +112,7 @@ vsCombo = tb.Combobox(
     bootstyle ="darkly",
     values= (versions)
       )   
-vsCombo.pack(pady = 20)
+vsCombo.grid(row = 4, column= 2)
 vsCombo.current(0)
 
 # second button for download path selection
@@ -97,14 +121,14 @@ path_button = tb.Button(
     text ="Browse",
     command = DownloadPath
     )
-path_button.pack()
+path_button.grid(row = 5, column= 2)
 
 #Final submit button
 sub_button = tb.Button(
     root,
     text ="Find my mods",
 )
-sub_button.pack(pady= 10)
+sub_button.grid(row = 6, column= 2)
 sub_button.configure(state="disabled") # Disabled on default until user selects all 3 catagories
 
 

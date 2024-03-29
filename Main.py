@@ -23,19 +23,19 @@ headers = {
   'x-api-key': Api_key
 }
 r = requests.get('https://api.curseforge.com/v1/minecraft/version', headers = headers)
-
 if r.status_code == 200:
   # Process the response data
+  print("Response Status:", r.status_code)
   data = r.json()
 
-  # Loop through each game entry and access data using schema-defined properties
+  # Loop through each game entry 
   for game_entry in data["data"]:
     game_version = game_entry["versionString"]
     versions.append(game_version)
 else:
   # Handle unsuccessful response
   print(f"Error retrieving data: {r.status_code}")
- 
+
 
 def mod_search(e):
     r = requests.get('https://api.curseforge.com/v1/mods/search', params={
@@ -45,12 +45,6 @@ def mod_search(e):
     }, headers = headers)
 
     print(r.json())
-
-'''
-def mod_download():
-   r = requests.get('https://api.curseforge.com/v1/mods/{modId}', headers = headers)
-'''
-
 
 
 #open file  
@@ -98,7 +92,7 @@ def DownloadPath():
 # creating window
 root = tb.Window(themename='darkly')
 root.title("Minecraft Mod Updater")
-root.geometry("500x400")
+root.geometry("600x400")
 
 
 # Widgets 
@@ -115,7 +109,7 @@ title_height = title_label.winfo_height()
 
 screen_width = root.winfo_screenwidth()
 x_center = int((400 / 2) - (title_height / 2))  # Use height for centering
-title_label.place(x=100, y=10)
+title_label.place(x=150, y=10)
 
 # First browse button for mod selection
 sel_button = tb.Button(   

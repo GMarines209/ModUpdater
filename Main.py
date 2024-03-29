@@ -16,12 +16,15 @@ versions = []
 mods=[]
 n_mods = []
 loader = []
+
 Api_key: str = os.getenv("API_KEY")
 
 headers = {
   'Accept': 'application/json',
   'x-api-key': Api_key
 }
+
+
 r = requests.get('https://api.curseforge.com/v1/minecraft/version', headers = headers)
 if r.status_code == 200:
   # Process the response data
@@ -38,13 +41,13 @@ else:
 
 
 def mod_search(e):
-    r = requests.get('https://api.curseforge.com/v1/mods/search', params={
+    r_mods = requests.get('https://api.curseforge.com/v1/mods/search', params={
     'gameId': '432',
     'gameVersion': vsCombo.get(),
     'searchFilter': n_mods
     }, headers = headers)
 
-    print(r.json())
+    print(r_mods.json())
 
 
 #open file  
@@ -57,29 +60,42 @@ def ModFiles():
         title= "select mods to update",
         filetypes= [("jar files","*.jar")] 
     )
+    print(filenames)
 
-    for filename in filenames:
-        mod_name = ( os.path.basename(filename))
+    count = 0
+
+    for name in filenames:
+        mod_name = ( os.path.basename(name))
         mods.append(mod_name)
-        for mod_name in mods:
-            parts = mod_name.split("-", 1)
-            if(len(parts) > 0 ):
-               new_name = (parts[0])
-               n_mods.append(new_name)
-            else:
-               None
+        count += 1
+        print("\n",mods)
+        print("\n",n_mods)
+        print (count)
+
+
+        if count == len(filenames):
+            for mod_name in mods:
+                parts = mod_name.split("-", 1)
+                if(len(parts) > 0 ):
+                    new_name = (parts[0])
+                    n_mods.append(new_name)
+
+                    if "fabric" or "Fabric" in mod_name:
+                        loader.append("fabric")
+                    elif "forge" or "Forge" in mod_name:
+                       loader.append("forge")
+                    else:
+                       loader.append("Error")
+                else:
+                    None
+
     
-    
-    if "fabric" in mod_name:
-       print("fabric")
-    elif "forge" in mod_name:
-       print("forge")
-    
-    path  = os.path.dirname(filename)
-    path_text = (path + filename)
+    path  = os.path.dirname(name)
+    path_text = (path + name)
     path_entry.insert(0,path_text)   
 
     print(n_mods)
+    print(loader)
 
 
 # get download location of new mods
@@ -92,7 +108,7 @@ def DownloadPath():
 # creating window
 root = tb.Window(themename='darkly')
 root.title("Minecraft Mod Updater")
-root.geometry("600x400")
+root.geometry("500x400")
 
 
 # Widgets 

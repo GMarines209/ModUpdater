@@ -7,6 +7,7 @@ import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 import pyglet
 from dotenv import load_dotenv
+from selenium import webdriver
 load_dotenv(".env")
 
 pyglet.font.add_file("Minecrafter.Reg.ttf")
@@ -16,6 +17,7 @@ versions = []
 mods=[]
 n_mods = []
 loader = []
+url = []
 
 Api_key: str = os.getenv("API_KEY")
 
@@ -27,27 +29,47 @@ headers = {
 
 r = requests.get('https://api.curseforge.com/v1/minecraft/version', headers = headers)
 if r.status_code == 200:
-  # Process the response data
-  print("Response Status:", r.status_code)
-  data = r.json()
-
-  # Loop through each game entry 
-  for game_entry in data["data"]:
-    game_version = game_entry["versionString"]
-    versions.append(game_version)
+     # Process the response data
+    print("Response Status:", r.status_code)
+    data = r.json()
+    # Loop through each game entry 
+    for game_entry in data["data"]:
+        game_version = game_entry["versionString"]
+        versions.append(game_version)
 else:
-  # Handle unsuccessful response
-  print(f"Error retrieving data: {r.status_code}")
+    # Handle unsuccessful response
+    print(f"Error retrieving data: {r.status_code}")
 
 
 def mod_search(e):
-    r_mods = requests.get('https://api.curseforge.com/v1/mods/search', params={
-    'gameId': '432',
-    'gameVersion': vsCombo.get(),
-    'searchFilter': n_mods
-    }, headers = headers)
 
-    print(r_mods.json())
+    for i in range(len(n_mods)):
+        r_mods = requests.get('https://api.curseforge.com/v1/mods/search', params={
+        'gameId': '432',
+        'gameVersion': vsCombo.get(),
+        'searchFilter': n_mods[i]
+        }, headers = headers)
+        mod_data = r_mods.json()
+
+        print("\n",r_mods.json(),"\n")
+
+        mods = mod_data.get("data")
+
+        for mod in mods:
+            links = mod.get("links")  # Access the "links" object within each mod
+            if links:
+                website_url = links.get("websiteUrl")  # Extract the "websiteUrl"
+                if website_url:
+                    url.append(website_url)
+            else:
+                print("WARNING: 'links' key not found in a mod object.")
+    print(url,"\n")
+
+
+
+
+
+
 
 
 #open file  
@@ -68,10 +90,6 @@ def ModFiles():
         mod_name = ( os.path.basename(name))
         mods.append(mod_name)
         count += 1
-        print("\n",mods)
-        print("\n",n_mods)
-        print (count)
-
 
         if count == len(filenames):
             for mod_name in mods:
@@ -120,7 +138,6 @@ title_label = tb.Label(
     bootstyle = "white",
     font=("Minecrafter")
     )
-
 title_height = title_label.winfo_height()
 
 screen_width = root.winfo_screenwidth()
@@ -150,9 +167,12 @@ vsCombo = tb.Combobox(
     values= (versions),
       )   
 vsCombo.grid(row = 4, column= 2)
+
+
 vsCombo.bind("<<ComboboxSelected>>", mod_search)
 vsCombo.current(0)
 
+# check  https://github.com/ParthJadhav/Tkinter-Designer?tab=readme-ov-file              for some maybe decent options, test out on other project first
 
 # second button for download path selection
 path_button = tb.Button(   

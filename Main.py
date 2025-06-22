@@ -1,382 +1,446 @@
-import tkinter as tk
-from tkinter import ttk
-from tkinter import filedialog
 import os
-import requests
-import ttkbootstrap as tb
-from ttkbootstrap.constants import *
-from ttkbootstrap.tooltip import ToolTip
-import pyglet
-from dotenv import load_dotenv
 import re
-import requests
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import threading
 import time
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
+import requests
+import pyglet
+import ttkbootstrap as tb
+from ttkbootstrap.constants import PRIMARY
+from dotenv import load_dotenv
 
+# --- ENVIRONMENT & API SETUP ---
 load_dotenv(".env")
+API_KEY = os.getenv("API_KEY")
+if not API_KEY:
+    raise RuntimeError("CURSEFORGE API_KEY not set in .env")
 
-pyglet.font.add_file("Minecrafter.Reg.ttf")
-Minecrafter =  pyglet.font.load("Minecrafter")
-
-versions = []
-mods = []
-n_mods = []
-loader = []
-url = []
-
-end_count = 0
-download_path = "" 
-
-
-
-Api_key: str = os.getenv("API_KEY")
-
-headers = {
-  'Accept': 'application/json',
-  'x-api-key': Api_key
+CURSEFORGE_BASE = "https://api.curseforge.com/v1"
+HEADERS = {
+    'Accept': 'application/json',
+    'X-Api-Key': API_KEY
 }
+GAME_ID = 432  # Minecraft game ID for CurseForge
 
+# --- GLOBAL STATE ---
+versions = []
+selected_mods = []  # Store mod info
+mod_urls = []
+download_path = None
 
-r = requests.get('https://api.curseforge.com/v1/minecraft/version', headers = headers)
-if r.status_code == 200:
-     # Process the response data
-    print("Response Status:", r.status_code)
-    data = r.json()
-    # Loop through each game entry 
-    for game_entry in data["data"]:
-        game_version = game_entry["versionString"]
-        versions.append(game_version)
-else:
-    # Handle unsuccessful response
-    print(f"Error retrieving data: {r.status_code}")
+isModFileSelected = False
+isVersionChosen = False
+isDownloadPathSet = False
 
-
-def mod_search(e):
-
-    for i in range(len(n_mods)):
-        r_mods = requests.get('https://api.curseforge.com/v1/mods/search', params={
-        'gameId': '432',
-        'gameVersion': vsCombo.get(),
-        'searchFilter': n_mods[i]
-        }, headers = headers)
-        mod_data = r_mods.json()
-
-        print("\n",r_mods.json(),"\n")
-
-        mods = mod_data.get("data")
-
-        for mod in mods:
-            links = mod.get("links")  # Access the "links" object within each mod
-            if links:
-                website_url = links.get("websiteUrl")  # Extract the "websiteUrl"
-                if website_url:
-                    url.append(website_url)
-            else:
-                print("WARNING: 'links' key not found in a mod object.")
-    print(url,"\n")
-
-    global end_count
-    end_count += 1
-    print(end_count)
-
-    if(end_count == 3):
-        sub_button.config(state= "normal")
-
-
-    
-
-# WORK ON FILENAME PARSING... MAKE BETTER 
-
-
-# ALSO IF THE EXACT MOD ISNT FOUND DONT GIVE THE NEXT ONE
-        # TELL USER NOT AVAILABLE IN THAT VERSION OR SOMETHING...
-
-#open file  
-def ModFiles():
-        
-    username = os.getlogin()
-
-    filenames = filedialog.askopenfilenames( #if user doesnt have a mods folder it just opens on default directory 
-        initialdir = os.path.join("C:\\Users", username, "AppData", "Roaming", ".minecraft", "mods"), # os.path.join creates the complete folder path by joining the individual directory parts
-        title= "select mods to update",
-        filetypes= [("jar files","*.jar")] 
-    )
-    print(filenames)
-
-    # count to get the complete filenames before starting to split
-    count = 0
-
-    for name in filenames:
-
-        base_name = ( os.path.basename(name))
-        mods.append(base_name)
-        count += 1
-
-        if count == len(filenames):
-                for base_name in mods:
-                    parts = parts = re.split(r"[-_]", base_name, 1)  # Split on either dash or underscore
-
-                    if(len(parts) > 0 ):
-
-                        new_name = (parts[0])
-                        n_mods.append(new_name)
-
-                        if "fabric" in base_name.lower():
-                            loader.append("fabric")
-                        elif "forge" in base_name.lower():
-                            loader.append("forge")
-                        else:
-                            loader.append("Error")
-                    else:
-                        n_mods.append(base_name)  # Append original name if no split
-                        loader.append("unknown")  # Indicate unknown loader
-
-    
-
-
-
-    path  = os.path.dirname(name)
-    path_text = (path + name)
-    path_entry.insert(0,path_text)   
-
-    print("Mod names:", n_mods)
-    print("Loaders:", loader)
-
-    # establishing the end count to enable the button
-    global end_count
-    end_count += 1
-    print(end_count)
-
-    if(end_count == 3):
-        sub_button.config(state= "normal")
-
-    
-
-
-# get download location of new mods
-def DownloadPath():
-    filepath = filedialog.askdirectory(
-        title= "select download location",
-    )
-    dl_path = os.path.dirname(filepath)
-    dl_path_text = (dl_path)
-    dl_path_entry.insert(0,dl_path_text)
-    download_path = dl_path_text
-    
-
-    global end_count
-    end_count += 1
-    print(end_count)
-
-    if(end_count == 3):
-        sub_button.config(state= "normal")
-
-
-
-
-# sets up the driver, headless mode, ignores safe download protection to allow remote downloading
-def setup_driver():
-    options = webdriver.ChromeOptions()
-    options.add_experimental_option("detach", True)
-    options.add_argument("--ignore-certificate-errors")
-    #try to set default directory to user input
-    options.add_experimental_option("prefs", {
-    "download.default_directory": r"C:\Users\downloads",
-    "download.prompt_for_download": False,
-    "download.directory_upgrade": True,
-    "safebrowsing.enabled": False})    
-
-    driver = webdriver.Chrome(options=options)
-    return driver
-
-def download_mod(driver, url):
+# --- LOAD CUSTOM FONT ---
+font_file = "Minecrafter.Reg.ttf"
+custom_font = "Minecrafter"
+if os.path.isfile(font_file):
     try:
-        driver.get(url)
-        
-        wait = WebDriverWait(driver, 15)
-        
-        # Wait for and click the download button
-        download_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn-cta.download-cta")))
-        actions = ActionChains(driver)
-        actions.move_to_element(download_button).click().perform()
-        
-        # Wait for and click the versions dropdown
-        version_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "p.dropdown-selected-item")))
-        actions.move_to_element(version_button).click().perform()
-        
-        # Select the desired version
-        version_list_elements = driver.find_elements(By.TAG_NAME, "li")
-        for element in version_list_elements:
-            if element.text == vsCombo.get():
-                element.click()
-                break
-        
-
-
-                # this part doesnt  work :(
-
-        # Wait for and click the loader dropdown
-        loader_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//*[contains(text(), 'All Mod Loaders')]/following-sibling::p")))
-        actions.move_to_element(loader_button).click().perform()
-        
-        # Select the desired loader
-        loader_list_elements = driver.find_elements(By.TAG_NAME, "li")
-        for element in loader_list_elements:
-            if element.text.lower() == loader[element].lower():
-                element.click()
-                break
-
-        # Click the final download button
-        final_download_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn-cta.download-cta")))
-        actions.move_to_element(final_download_button).click().perform()
-
-        print(f"Successfully initiated download for {url}")
-
+        pyglet.font.add_file(font_file)
+        pyglet.font.load("Minecrafter")
     except Exception as e:
-        print(f"Error occurred while processing {url}: {e}")
+        print(f"Failed to load custom font: {e}")
+        custom_font = "Arial"  # Fallback font
+else:
+    print("WARNING! Font file not found:", font_file)
+    custom_font = "Arial"  # Fallback font
 
+# --- UTILITY FUNCTIONS ---
+def load_versions():
+    """Fetch Minecraft versions once and cache."""
+    if versions:
+        return versions
+    try:
+        resp = requests.get(f"{CURSEFORGE_BASE}/minecraft/version", headers=HEADERS, timeout=10)
+        resp.raise_for_status()
+        data = resp.json().get("data", [])
+        for entry in data:
+            if entry.get("versionString"):
+                versions.append(entry["versionString"])
+        # Sort versions in reverse order (newest first)
+        versions.sort(key=lambda x: [int(i) for i in x.split('.')] if x.replace('.', '').isdigit() else [0], reverse=True)
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load Minecraft versions:\n{e}")
+    return versions
 
-def process_urls(url):
-    driver = setup_driver()
-    for link in url:
-        download_mod(driver, link)
-    driver.quit()
+def check_all_conditions():
+    """Enable submit button only when all three steps are done."""
+    if isModFileSelected and isVersionChosen and isDownloadPathSet:
+        sub_button.config(state="normal")
+    else:
+        sub_button.config(state="disabled")
 
-# Example usage within Tkinter callback
+def update_status(message, is_error=False):
+    """Update status label with message."""
+    if is_error:
+        status_label.config(text=message, bootstyle="danger")
+    else:
+        status_label.config(text=message, bootstyle="info")
+    root.update_idletasks()
+
+# --- STEP 1: SELECT & PARSE MOD FILES ---
+def ModFiles():
+    global isModFileSelected, selected_mods
+    
+    # Default to Minecraft mods folder
+    default_dir = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", ".minecraft", "mods")
+    if not os.path.exists(default_dir):
+        default_dir = os.path.expanduser("~")
+    
+    filenames = filedialog.askopenfilenames(
+        initialdir=default_dir,
+        title="Select mods to update",
+        filetypes=[("JAR files", "*.jar"), ("All files", "*.*")]
+    )
+    
+    if not filenames:
+        return
+
+    selected_mods.clear()
+    
+    for fullpath in filenames:
+        base = os.path.basename(fullpath)
+        # More sophisticated slug extraction
+        slug = extract_mod_slug(base)
+        
+        # Detect loader from filename
+        detected_loader = detect_loader(base)
+        
+        selected_mods.append({
+            'filename': base,
+            'slug': slug,
+            'loader': detected_loader,
+            'path': fullpath
+        })
+
+    isModFileSelected = True
+    
+    # Update UI
+    path_entry.delete(0, tk.END)
+    path_entry.insert(0, f"{len(selected_mods)} mod(s) selected")
+    
+    update_status(f"Selected {len(selected_mods)} mod(s)")
+    check_all_conditions()
+
+def extract_mod_slug(filename):
+    """Extract mod slug from filename, handling various naming patterns."""
+    base = os.path.splitext(filename)[0]
+    
+    # Common patterns to remove version info
+    patterns = [
+        r'^(.+?)[-_]v?\d+\.\d+.*$',  # name-1.0.0
+        r'^(.+?)[-_]\d+\.\d+.*$',   # name_1.0.0
+        r'^(.+?)[-_]mc\d+\.\d+.*$', # name-mc1.19.2
+        r'^(.+?)[-_]\[.*?\].*$',    # name-[1.19.2]
+        r'^(.+?)[-_]\(.*?\).*$',    # name-(forge)
+    ]
+    
+    for pattern in patterns:
+        match = re.match(pattern, base, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    
+    return base
+
+def detect_loader(filename):
+    """Detect mod loader from filename."""
+    filename_lower = filename.lower()
+    if "fabric" in filename_lower:
+        return "fabric"
+    elif "forge" in filename_lower:
+        return "forge"
+    elif "quilt" in filename_lower:
+        return "quilt"
+    else:
+        return "unknown"
+
+# --- STEP 2: CHOOSE VERSION & SEARCH IN BACKGROUND ---
+def mod_search(event):
+    if not selected_mods:
+        return
+    version = vsCombo.get()
+    if not version:
+        return
+        
+    update_status("Searching for mods...")
+    threading.Thread(target=_mod_search_worker, args=(version,), daemon=True).start()
+
+def _mod_search_worker(version):
+    global isVersionChosen, mod_urls
+    
+    mod_urls.clear()
+    found_count = 0
+    
+    for mod_info in selected_mods:
+        try:
+            # Search for mod by slug
+            params = {
+                'gameId': GAME_ID,
+                'gameVersion': version,
+                'searchFilter': mod_info['slug'],
+                'sortField': 6,  # Sort by downloads
+                'sortOrder': 'desc'
+            }
+            
+            resp = requests.get(f"{CURSEFORGE_BASE}/mods/search", params=params, headers=HEADERS, timeout=10)
+            resp.raise_for_status()
+            
+            data = resp.json().get("data", [])
+            
+            # Find best match
+            best_match = None
+            for mod in data:
+                mod_slug = mod.get("slug", "").lower()
+                search_slug = mod_info['slug'].lower()
+                
+                # Exact match or contains match
+                if mod_slug == search_slug or search_slug in mod_slug or mod_slug in search_slug:
+                    best_match = mod
+                    break
+            
+            if not best_match and data:
+                best_match = data[0]  # Fallback to first result
+            
+            if best_match:
+                mod_urls.append({
+                    'mod_id': best_match['id'],
+                    'name': best_match['name'],
+                    'slug': best_match['slug'],
+                    'website_url': best_match.get('links', {}).get('websiteUrl', ''),
+                    'original_mod': mod_info
+                })
+                found_count += 1
+            else:
+                print(f"No results found for: {mod_info['slug']}")
+                
+        except Exception as e:
+            print(f"Search failed for {mod_info['slug']}: {e}")
+
+    isVersionChosen = True
+    root.after(0, lambda: [
+        update_status(f"Found {found_count}/{len(selected_mods)} mods"),
+        check_all_conditions()
+    ])
+
+# --- STEP 3: SELECT DOWNLOAD PATH ---
+def DownloadPath():
+    global isDownloadPathSet, download_path
+    
+    # Default to Minecraft mods folder
+    default_dir = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", ".minecraft", "mods")
+    if not os.path.exists(default_dir):
+        default_dir = os.path.expanduser("~")
+    
+    folder = filedialog.askdirectory(
+        title="Select download location",
+        initialdir=default_dir
+    )
+    
+    if not folder:
+        return
+
+    isDownloadPathSet = True
+    download_path = folder
+
+    dl_path_entry.delete(0, tk.END)
+    dl_path_entry.insert(0, download_path)
+    
+    update_status(f"Download path set: {os.path.basename(download_path)}")
+    check_all_conditions()
+
+# --- STEP 4: DOWNLOAD MODS ---
+def download_mod_file(mod_info, version, dest_dir):
+    """Download the latest compatible file for a mod."""
+    try:
+        mod_id = mod_info['mod_id']
+        original_mod = mod_info['original_mod']
+        
+        # Get mod files
+        resp = requests.get(
+            f"{CURSEFORGE_BASE}/mods/{mod_id}/files",
+            params={'gameVersion': version},
+            headers=HEADERS,
+            timeout=15
+        )
+        resp.raise_for_status()
+        
+        files = resp.json().get("data", [])
+        if not files:
+            print(f"No files found for mod: {mod_info['name']}")
+            return False
+        
+        # Filter files by game version and loader compatibility
+        compatible_files = []
+        for file in files:
+            game_versions = [gv.lower() for gv in file.get("gameVersions", [])]
+            
+            # Check if file supports the target version
+            if version.lower() in game_versions:
+                # Check loader compatibility
+                if original_mod['loader'] == 'unknown':
+                    compatible_files.append(file)
+                else:
+                    # Look for loader in game versions or dependencies
+                    loader_found = any(original_mod['loader'].lower() in gv.lower() for gv in game_versions)
+                    if loader_found or original_mod['loader'] == 'unknown':
+                        compatible_files.append(file)
+        
+        if not compatible_files:
+            print(f"No compatible files for {mod_info['name']} @ {version}")
+            return False
+        
+        # Sort by file date (newest first) and pick the first one
+        compatible_files.sort(key=lambda f: f.get('fileDate', ''), reverse=True)
+        file_to_download = compatible_files[0]
+        
+        download_url = file_to_download.get("downloadUrl")
+        if not download_url:
+            print(f"No download URL for {mod_info['name']}")
+            return False
+        
+        filename = file_to_download.get("fileName", f"{mod_info['slug']}.jar")
+        
+        # Download the file
+        print(f"Downloading {filename}...")
+        file_resp = requests.get(download_url, timeout=30)
+        file_resp.raise_for_status()
+        
+        output_path = os.path.join(dest_dir, filename)
+        with open(output_path, "wb") as f:
+            f.write(file_resp.content)
+        
+        print(f"Downloaded: {filename}")
+        return True
+        
+    except Exception as e:
+        print(f"Download failed for {mod_info['name']}: {e}")
+        return False
+
+def process_downloads():
+    """Download all found mods."""
+    if not mod_urls or not download_path:
+        messagebox.showerror("Error", "No mods to download or download path not set")
+        return
+    
+    version = vsCombo.get()
+    if not version:
+        messagebox.showerror("Error", "No version selected")
+        return
+    
+    success_count = 0
+    total_count = len(mod_urls)
+    
+    for i, mod_info in enumerate(mod_urls, 1):
+        root.after(0, lambda: update_status(f"Downloading {i}/{total_count}: {mod_info['name']}"))
+        
+        if download_mod_file(mod_info, version, download_path):
+            success_count += 1
+    
+    root.after(0, lambda: [
+        update_status(f"Downloaded {success_count}/{total_count} mods successfully", 
+                     is_error=success_count < total_count),
+        messagebox.showinfo("Download Complete", 
+                          f"Downloaded {success_count} out of {total_count} mods.\n"
+                          f"Files saved to: {download_path}")
+    ])
+
 def modDownload():
-    global end_count
+    """Start download process in background thread."""
+    if not mod_urls:
+        messagebox.showwarning("Warning", "No mods found. Please select mods and choose a version first.")
+        return
+    
+    # Disable button during download
+    sub_button.config(state="disabled")
+    threading.Thread(target=lambda: [
+        process_downloads(),
+        root.after(0, lambda: sub_button.config(state="normal"))
+    ], daemon=True).start()
 
-    process_urls(url)
-
-    end_count += 1
-    if end_count == 3:
-        sub_button.config(state= "normal")
-
-
-
-
-
-# creating window
+# --- UI SETUP ---
 root = tb.Window(themename='darkly')
 root.title("Minecraft Mod Updater")
-root.geometry("530x430")
-root.resizable(False,False)
+root.geometry("600x500")
+root.resizable(False, False)
 
+# Main container
+main_frame = tb.Frame(root)
+main_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-
-# Widgets 
-
-
-title_frame = tb.LabelFrame(
-    root
+# Header
+header_label = tb.Label(
+    main_frame, 
+    text="Minecraft Mod Updater",
+    bootstyle="white", 
+    font=(custom_font, 20)
 )
-title_frame.grid(sticky= "nesw")
+header_label.pack(pady=(0, 20))
 
-# Text on top for Mod selection
-title_label = tb.Label(
-    title_frame,
-    text = "Minecraft Mod Updater",
-    bootstyle = "white",
-    font=("Minecrafter",20)
-    )
-title_label.grid(row=0, columnspan=3, pady=10, padx= 60, sticky="new")
+# Step 1: Mod Selection
+step1_frame = tb.LabelFrame(main_frame, text="Step 1: Select Mods", padding=10)
+step1_frame.pack(fill="x", pady=(0, 10))
 
-
-mod_label = tb.Label(
-    root,
-    text = "Choose What Mods You Want To Update:",
-    bootstyle = "white",
-    font=("Minecrafter",13)
+sel_button = tb.Button(
+    step1_frame, 
+    text="Browse for Mods...", 
+    command=ModFiles,
+    bootstyle=PRIMARY
 )
-mod_label.grid(row=1,column=0,pady=20,padx= 85, sticky= "ws")
+sel_button.pack(side="left", padx=(0, 10))
 
-#  browse button for mod selection
-sel_button = tb.Button(   
-    root,
-    bootstyle = PRIMARY,
-    text ="Browse:",
-    command = ModFiles
-    )
-sel_button.grid(row = 2, column= 0,padx=20,sticky="w")
+path_entry = tb.Entry(step1_frame, width=50)
+path_entry.pack(side="left", fill="x", expand=True)
 
-# label for file path on mod selection
-path_entry = tb.Entry(
-    root,
-    width= 50
-    )
-path_entry.grid(row = 2, column= 0,padx= 85 ,sticky= "nsew")
+# Step 2: Version Selection
+step2_frame = tb.LabelFrame(main_frame, text="Step 2: Choose Minecraft Version", padding=10)
+step2_frame.pack(fill="x", pady=(0, 10))
 
-#Label for Browser choice
-browser_label = tb.Label(
-    root,
-    text = "Select Your Browser:",
-    bootstyle = "white",
-    font=("Minecrafter",10)
-    )
-browser_label.grid(row=3, column=0,sticky= "w" , padx= 20, pady= 20)
+version_label = tb.Label(step2_frame, text="Version:")
+version_label.pack(side="left", padx=(0, 10))
 
+vsCombo = tb.Combobox(step2_frame, bootstyle="darkly", values=load_versions(), width=20)
+vsCombo.pack(side="left")
 
-versions_label = tb.Label(
-    root,
-    text = "Desired Version:",
-    bootstyle = "white",
-    font=("Minecrafter",10)
-    )
-versions_label.grid(row=4,column=0,sticky= "w" , padx= 20, pady= 10)
-
-#combobox for Versions
-vsCombo = tb.Combobox( 
-    root,
-    bootstyle ="darkly",
-    values= (versions),
-      )   
-vsCombo.grid(row = 3, column= 0)
+if versions:
+    vsCombo.set(versions[0])  # Set to latest version
 vsCombo.bind("<<ComboboxSelected>>", mod_search)
-vsCombo.current(0)
 
-#Label for download path
-path_label = tb.Label(
-    root,
-        text = "Download Location:",
-        bootstyle = "white",
-        font=("Minecrafter",13)
+# Step 3: Download Location
+step3_frame = tb.LabelFrame(main_frame, text="Step 3: Download Location", padding=10)
+step3_frame.pack(fill="x", pady=(0, 10))
+
+path_button = tb.Button(
+    step3_frame, 
+    text="Browse...", 
+    command=DownloadPath
 )
-path_label.grid(row=4,column=0,pady=20,padx= 170, sticky= "ws")
+path_button.pack(side="left", padx=(0, 10))
 
-# button for download path 
-path_button = tb.Button(   
-    root,
-    text ="Browse",
-    command = DownloadPath
-    )
-path_button.grid(row = 5, column= 0,padx=20,sticky="w")
+dl_path_entry = tb.Entry(step3_frame, width=50)
+dl_path_entry.pack(side="left", fill="x", expand=True)
 
-#entrybox for download path
-dl_path_entry = tb.Entry(
-    root,
-    width= 50,
-)
-dl_path_entry.grid(row = 5, column= 0,padx=80,sticky="nsew")
+# Submit Button
+button_frame = tb.Frame(main_frame)
+button_frame.pack(pady=20)
 
-
-#Final submit button
 sub_button = tb.Button(
-    root,
-    text ="Find My Mods!",
-    command= modDownload,
-    state= "disabled"
+    button_frame, 
+    text="Download Updated Mods!", 
+    command=modDownload, 
+    state="disabled",
+    bootstyle="success"
 )
-sub_button.grid(row = 6, column= 0, pady = 30)
-#ToolTip(sub_button, text = "Make sure you have ")
+sub_button.pack()
 
-    
+# Status Label
+status_label = tb.Label(main_frame, text="Ready", bootstyle="info")
+status_label.pack(pady=(10, 0))
 
+# Initialize
+check_all_conditions()
 
-# running
-root.mainloop()
-
+if __name__ == "__main__":
+    root.mainloop()

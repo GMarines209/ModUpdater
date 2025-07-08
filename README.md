@@ -1,21 +1,35 @@
 # 🧱 Minecraft Mod Updater 🧱
 
-This is a mod updater i designed to eliminate that annoying process of updating your mods every time you wanna play different versions of the game!
-
-## 🧠 How it works
--  Scans your mods folder and reads all .jar files
--  Select any version of minecraft you want your mods in
--  Searches the mod name and sorts through curseforge's api to find a correct match
--  Choose wherever you want to download your mods
--  Enjoy your mods! ( if they are available in your selected version)
+Tired of the annoying process of updating your mods every time you switch Minecraft versions?  
+**This tool automates that for you!**
 
 ---
 
-## 👇 Download Instructions
+## 🧠 How It Works
 
-- download the zip file
-- extract files to folder
-- open dist folder
-- run exe and allow to run on your pc 😄
+- 🔍 Scans your `mods/` folder and reads all `.jar` files  
+- 🎮 Lets you select the Minecraft version you want your mods to match  
+- 🌐 Searches CurseForge’s API to find the best match  
+- 💾 Downloads the selected version of the mod to your chosen folder  
+- ✅ Enjoy your updated (or downgraded) mods – if available for the version you picked!
 
+---
 
+## 👇 How to Download & Use
+
+1. 📥 Download the ZIP file  
+2. 🗂️ Extract it anywhere you'd like  
+3. 📁 Open the `dist/` folder  
+4. ▶️ Run the `.exe` file (Windows may ask for permission – allow it)  
+5. 😄 Done! The updater will guide you through the rest
+
+---
+
+## 💡 Notes
+
+- Not all mods are available for every version of Minecraft
+- This version supports **Fabric mods** (Forge support coming soon?)
+
+---
+
+This is my first real competed project so hope yall enjoy ❤️ !!

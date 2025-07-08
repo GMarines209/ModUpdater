@@ -10,9 +10,48 @@ import pyglet
 import ttkbootstrap as tb
 from ttkbootstrap.constants import PRIMARY
 from dotenv import load_dotenv
+import sys
+
+# Check for required modules
+required_modules = ['requests', 'pyglet', 'ttkbootstrap', 'dotenv']
+missing_modules = []
+
+for module in required_modules:
+    try:
+        __import__(module)
+    except ImportError:
+        missing_modules.append(module)
+
+if missing_modules:
+    import tkinter as tk
+    from tkinter import messagebox
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showerror(
+        "Missing Dependencies", 
+        f"Missing required modules: {', '.join(missing_modules)}\n"
+        "Please install them using pip."
+    )
+    sys.exit(1)
+
 
 # --- ENVIRONMENT & API SETUP ---
-load_dotenv(".env")
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
+
+# Update font loading
+font_file = get_resource_path("Minecrafter.Reg.ttf")
+
+# Update .env loading
+load_dotenv(get_resource_path(".env"))
+
 API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise RuntimeError("CURSEFORGE API_KEY not set in .env")

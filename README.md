@@ -27,8 +27,7 @@ Tired of the annoying process of updating your mods every time you switch Minecr
 
 ## 💡 Notes
 
-- Not all mods are available for every version of Minecraft
-- This version supports **Fabric mods** (Forge support coming soon?)
+- Not all mods are available for every version of Minecraft so if your mods arent available... sorry!
 
 ---
 

@@ -1,34 +1,39 @@
-# 🧱 Minecraft Mod Updater 🧱
+<div align="center">
 
-Tired of the annoying process of updating your mods every time you switch Minecraft versions?  
-**This tool automates that for you!**
+<br>
 
----
+<img src="resources/minecraft_title.png" alt="Mod updater logo" width="600">
 
-## 🧠 How It Works
+<br>
 
-- 🔍 Scans your `mods/` folder and reads all `.jar` files  
-- 🎮 Lets you select the Minecraft version you want your mods to match  
-- 🌐 Searches CurseForge’s API to find the best match  
-- 💾 Downloads the selected version of the mod to your chosen folder  
-- ✅ Enjoy your updated (or downgraded) mods – if available for the version you picked!
+<br><br>
 
----
+This is a Mod updater for Minecraft that allows you to batch update mods to any desired version, letting you save some manual download time and hastle
 
-## 👇 How to Download & Use
+</div>
 
-1. 📥 Download the ZIP file  
-2. 🗂️ Extract it anywhere you'd like  
-3. 📁 Open the `dist/` folder  
-4. ▶️ Run the `.exe` file (Windows may ask for permission – allow it)  
-5. 😄 Done! The updater will guide you through the rest
+<br>
 
----
+</details>
+<br><br>
 
-## 💡 Notes
+> [!Note] 
+> As of right now this only works with individual .jar files and has no integration beyond curseforge's api
+> because of this its up to you solve any mod conflict issues or clashes in versions.
+> This is something i am looking into fixing in any subsuquent updates.  
 
-- Not all mods are available for every version of Minecraft so if your mods arent available... sorry!
 
----
+<h1><strong>How it works</strong></h1> 
 
-This is my first real competed project so hope yall enjoy ❤️ !!
+**1. Searches for your already made /minecraft/mods/ folder and lets you select whichever mod you would like to update**  
+*only reads .jar files*  
+**2. You select which version of Minecraft you want to download at using curseforge api to gather all available versions**
+
+**3. Select the download location to where you want all your files download to**
+
+**4. Once you click the download button, it sends the gathered mod and version id to curseforge api where the download is requested and completed**
+
+<img src="https://github.com/user-attachments/assets/0af9f306-be27-49a4-b794-0f82390ab19a" alt="Gui" width="700">
+
+# Future Updates 
+In the future i would like to add modpack support and easier usecases for conflicting mods

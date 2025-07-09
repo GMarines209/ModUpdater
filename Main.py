@@ -43,7 +43,6 @@ def get_resource_path(relative_path):
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
-    
     return os.path.join(base_path, relative_path)
 
 # Update font loading
@@ -404,6 +403,10 @@ root = tb.Window(themename='darkly')
 root.title("Minecraft Mod Updater")
 root.geometry("600x500")
 root.resizable(False, False)
+
+# Set the window icon
+icon_path = get_resource_path('resources/mc_updater_logo.ico')
+root.iconbitmap(icon_path)
 
 # Main container
 main_frame = tb.Frame(root)

@@ -5,7 +5,7 @@ a = Analysis(
     ['Main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('.env', '.'), ('resources/mc_updater_logo.ico', 'resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

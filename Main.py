@@ -39,7 +39,6 @@ if missing_modules:
 def get_resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller"""
     try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
@@ -119,7 +118,7 @@ def update_status(message, is_error=False):
         status_label.config(text=message, bootstyle="info")
     root.update_idletasks()
 
-# --- STEP 1: SELECT & PARSE MOD FILES ---
+# --- SELECT & PARSE MOD FILES ---
 def ModFiles():
     global isModFileSelected, selected_mods
     
@@ -141,10 +140,8 @@ def ModFiles():
     
     for fullpath in filenames:
         base = os.path.basename(fullpath)
-        # More sophisticated slug extraction
         slug = extract_mod_slug(base)
         
-        # Detect loader from filename
         detected_loader = detect_loader(base)
         
         selected_mods.append({
@@ -156,7 +153,6 @@ def ModFiles():
 
     isModFileSelected = True
     
-    # Update UI
     path_entry.delete(0, tk.END)
     path_entry.insert(0, f"{len(selected_mods)} mod(s) selected")
     
@@ -167,7 +163,6 @@ def extract_mod_slug(filename):
     """Extract mod slug from filename, handling various naming patterns."""
     base = os.path.splitext(filename)[0]
     
-    # Common patterns to remove version info
     patterns = [
         r'^(.+?)[-_]v?\d+\.\d+.*$',  # name-1.0.0
         r'^(.+?)[-_]\d+\.\d+.*$',   # name_1.0.0
@@ -195,7 +190,7 @@ def detect_loader(filename):
     else:
         return "unknown"
 
-# --- STEP 2: CHOOSE VERSION & SEARCH IN BACKGROUND ---
+# --- CHOOSE VERSION & SEARCH IN BACKGROUND ---
 def mod_search(event):
     if not selected_mods:
         return
@@ -228,13 +223,12 @@ def _mod_search_worker(version):
             
             data = resp.json().get("data", [])
             
-            # Find best match
+
             best_match = None
             for mod in data:
                 mod_slug = mod.get("slug", "").lower()
                 search_slug = mod_info['slug'].lower()
                 
-                # Exact match or contains match
                 if mod_slug == search_slug or search_slug in mod_slug or mod_slug in search_slug:
                     best_match = mod
                     break
@@ -263,11 +257,10 @@ def _mod_search_worker(version):
         check_all_conditions()
     ])
 
-# --- STEP 3: SELECT DOWNLOAD PATH ---
+# --- SELECT DOWNLOAD PATH ---
 def DownloadPath():
     global isDownloadPathSet, download_path
     
-    # Default to Minecraft mods folder
     default_dir = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", ".minecraft", "mods")
     if not os.path.exists(default_dir):
         default_dir = os.path.expanduser("~")
@@ -289,7 +282,7 @@ def DownloadPath():
     update_status(f"Download path set: {os.path.basename(download_path)}")
     check_all_conditions()
 
-# --- STEP 4: DOWNLOAD MODS ---
+# --- DOWNLOAD MODS ---
 def download_mod_file(mod_info, version, dest_dir):
     """Download the latest compatible file for a mod."""
     try:
@@ -330,7 +323,7 @@ def download_mod_file(mod_info, version, dest_dir):
             print(f"No compatible files for {mod_info['name']} @ {version}")
             return False
         
-        # Sort by file date (newest first) and pick the first one
+        # Sort by file date (newest first) and get first one
         compatible_files.sort(key=lambda f: f.get('fileDate', ''), reverse=True)
         file_to_download = compatible_files[0]
         
@@ -341,7 +334,6 @@ def download_mod_file(mod_info, version, dest_dir):
         
         filename = file_to_download.get("fileName", f"{mod_info['slug']}.jar")
         
-        # Download the file
         print(f"Downloading {filename}...")
         file_resp = requests.get(download_url, timeout=30)
         file_resp.raise_for_status()
@@ -421,7 +413,7 @@ header_label = tb.Label(
 )
 header_label.pack(pady=(0, 20))
 
-# Step 1: Mod Selection
+# Mod Selection
 step1_frame = tb.LabelFrame(main_frame, text="Step 1: Select Mods", padding=10)
 step1_frame.pack(fill="x", pady=(0, 10))
 
@@ -436,7 +428,7 @@ sel_button.pack(side="left", padx=(0, 10))
 path_entry = tb.Entry(step1_frame, width=50)
 path_entry.pack(side="left", fill="x", expand=True)
 
-# Step 2: Version Selection
+# Version Selection
 step2_frame = tb.LabelFrame(main_frame, text="Step 2: Choose Minecraft Version", padding=10)
 step2_frame.pack(fill="x", pady=(0, 10))
 
@@ -450,7 +442,7 @@ if versions:
     vsCombo.set(versions[0])  # Set to latest version
 vsCombo.bind("<<ComboboxSelected>>", mod_search)
 
-# Step 3: Download Location
+# Download Location
 step3_frame = tb.LabelFrame(main_frame, text="Step 3: Download Location", padding=10)
 step3_frame.pack(fill="x", pady=(0, 10))
 
